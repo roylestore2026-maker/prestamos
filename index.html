@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Préstamos" />
+<meta name="theme-color" content="#1F4B3C" />
+<title>Libro de Préstamos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --paper:#FBF6EC;
+  --paper-deep:#F3EAD6;
+  --line:#DCCEA9;
+  --ink:#20281F;
+  --ink-soft:#5B6055;
+  --forest:#1F4B3C;
+  --forest-dark:#12332A;
+  --gold:#B8863B;
+  --gold-light:#E7C77E;
+  --rust:#9A3324;
+  --sage:#7C9885;
+  --white:#FFFDF8;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{overflow-x:hidden;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Inter',sans-serif;
+  background-image:
+    linear-gradient(var(--paper) 0px, var(--paper) 27px, var(--line) 28px);
+  background-size: 100% 28px;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.serif{font-family:'Fraunces',serif;}
+
+#shell{max-width:1040px;margin:0 auto;padding:0 14px 60px;}
+
+/* ---------- Cover header ---------- */
+.cover{
+  margin-top:16px;
+  background:linear-gradient(160deg, var(--forest) 0%, var(--forest-dark) 100%);
+  border-radius:14px 14px 4px 4px;
+  padding:20px 20px 16px;
+  color:var(--paper);
+  box-shadow: 0 10px 24px rgba(18,51,42,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+  position:relative;
+}
+.cover::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:-6px; height:6px;
+  background:var(--gold); border-radius:0 0 4px 4px; opacity:.55;
+}
+.cover-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.cover h1{
+  font-family:'Fraunces',serif; font-weight:700; font-size:26px; margin:0 0 4px;
+  letter-spacing:.3px;
+}
+.cover .eyebrow{
+  text-transform:uppercase; letter-spacing:2.5px; font-size:10.5px; color:var(--gold-light);
+  font-weight:600;
+}
+.role-pill{
+  font-size:11px; font-weight:700; padding:5px 11px; border-radius:20px; white-space:nowrap;
+  background:rgba(251,246,236,0.15); color:var(--gold-light); border:1px solid rgba(231,199,126,0.4);
+  cursor:pointer;
+}
+.cover-stats{display:flex; gap:16px; margin-top:14px; flex-wrap:wrap;}
+.cover-stat{min-width:130px;}
+.cover-stat .label{font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:rgba(251,246,236,0.65);}
+.cover-stat .value{font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:600; margin-top:2px;}
+.cover-stat .value.warn{color:var(--gold-light);}
+
+/* ---------- Tabs (ledger dividers) ---------- */
+.tabs{display:flex; gap:4px; margin-top:0; padding-left:2px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{
+  font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+  background:var(--paper-deep); color:var(--ink-soft);
+  border:1px solid var(--line); border-bottom:none;
+  padding:10px 14px 8px; border-radius:8px 8px 0 0;
+  cursor:pointer; position:relative; top:1px; white-space:nowrap; flex-shrink:0;
+}
+.tab.active{
+  background:var(--white); color:var(--forest-dark); top:0;
+  border-color:var(--line); font-weight:700;
+}
+.panel{
+  background:var(--white); border:1px solid var(--line); border-radius:0 10px 10px 10px;
+  padding:18px; box-shadow:0 2px 10px rgba(30,40,30,0.05);
+  min-height:340px;
+}
+
+h2.section-title{
+  font-family:'Fraunces',serif; font-size:19px; margin:0 0 4px; color:var(--forest-dark);
+}
+h3.subsection-title{
+  font-family:'Fraunces',serif; font-size:15px; margin:0 0 10px; color:var(--forest-dark);
+}
+.section-sub{color:var(--ink-soft); font-size:12.5px; margin:0 0 16px;}
+
+/* ---------- Cards / grid ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;}
+.card{
+  background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+}
+.card .label{font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); font-weight:600;}
+.card .num{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; margin-top:6px; color:var(--forest-dark); word-break:break-word;}
+.card .num.rust{color:var(--rust);}
+.card .num.gold{color:var(--gold);}
+
+/* ---------- Bank cards ---------- */
+.bank-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:12px;
+}
+.bank-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+.bank-name{font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--forest-dark);}
+.bank-rate{font-size:12px; color:var(--gold); font-weight:600;}
+.bank-balance{font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:600; color:var(--forest-dark);}
+.bank-action-group{border-top:1px dashed var(--line); margin-top:10px; padding-top:10px;}
+.bank-action-group .grp-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); font-weight:700; margin-bottom:6px;}
+.bank-edit-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; align-items:flex-end;}
+.bank-edit-row .field{display:flex; flex-direction:column; gap:4px;}
+.bank-edit-row input{width:120px;}
+.bank-edit-row .wide{width:150px;}
+
+/* ---------- Jar visual ---------- */
+.jar-wrap{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+.jar{
+  width:100px; height:135px; border:3px solid var(--forest-dark); border-radius:10px 10px 20px 20px;
+  position:relative; overflow:hidden; background:var(--paper-deep); flex-shrink:0;
+}
+.jar-fill{
+  position:absolute; left:0; right:0; bottom:0; background:linear-gradient(180deg, var(--gold-light), var(--gold));
+  transition:height .4s ease;
+}
+.jar-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12px; color:var(--forest-dark); mix-blend-mode:multiply; text-align:center;}
+.jar-caption{max-width:340px; font-size:13px; color:var(--ink-soft); line-height:1.5;}
+
+/* ---------- Table ---------- */
+.tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:6px;}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:560px;}
+th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft); padding:8px 9px; border-bottom:2px solid var(--line); white-space:nowrap;}
+td{padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:middle; white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.3px;}
+.badge.activo{background:#E4EFE7; color:var(--forest);}
+.badge.completado{background:#E9E4F2; color:#5B3C99;}
+.badge.mora{background:#F6E1DC; color:var(--rust);}
+.badge.pagada{background:#E4EFE7; color:var(--forest);}
+.badge.pendiente{background:#F1EADB; color:var(--gold);}
+.badge.vencida{background:#F6E1DC; color:var(--rust);}
+
+/* ---------- Forms ---------- */
+.form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+label{display:block; font-size:11.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px;}
+input, select{
+  width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:7px; background:var(--paper);
+  font-family:'Inter',sans-serif; font-size:15px; color:var(--ink);
+}
+input:focus, select:focus{outline:2px solid var(--forest); outline-offset:1px;}
+.btn{
+  font-family:'Inter',sans-serif; font-weight:700; font-size:13.5px; padding:10px 16px; border-radius:8px;
+  border:none; cursor:pointer; background:var(--forest); color:var(--white); transition:background .15s;
+}
+.btn:hover{background:var(--forest-dark);}
+.btn.secondary{background:var(--paper-deep); color:var(--forest-dark); border:1px solid var(--line);}
+.btn.secondary:hover{background:var(--line);}
+.btn.small{padding:7px 12px; font-size:12px;}
+.btn.rust{background:var(--rust);}
+.btn.rust:hover{background:#7d2a1c;}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+
+.form-error{
+  background:#F6E1DC; color:var(--rust); border:1px solid #E3B6A9; border-radius:8px;
+  padding:10px 14px; font-size:13px; font-weight:600; margin-bottom:14px;
+}
+.info-note{
+  background:#EEF3EF; color:var(--forest-dark); border:1px solid #CFE0D3; border-radius:8px;
+  padding:10px 14px; font-size:12.5px; margin-bottom:14px; line-height:1.5;
+}
+
+.loan-row{border:1px solid var(--line); border-radius:10px; margin-bottom:12px; overflow:hidden;}
+.loan-row.highlight{border-color:var(--gold); box-shadow:0 0 0 2px rgba(184,134,59,0.25);}
+.loan-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:14px 14px; cursor:pointer; background:var(--paper); flex-wrap:wrap;}
+.loan-head:hover{background:var(--paper-deep);}
+.loan-name{font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--forest-dark);}
+.loan-meta{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+.loan-body{padding:14px; display:none; background:var(--white);}
+.loan-body.open{display:block;}
+.loan-admin-actions{display:flex; gap:8px; padding:0 14px 12px; background:var(--paper); flex-wrap:wrap;}
+.progress-bar{height:6px; background:var(--line); border-radius:4px; overflow:hidden; margin-top:6px; width:140px; max-width:100%;}
+.progress-fill{height:100%; background:var(--sage);}
+
+.empty{padding:34px 16px; text-align:center; color:var(--ink-soft);}
+.empty .big{font-family:'Fraunces',serif; font-size:17px; color:var(--forest-dark); margin-bottom:6px;}
+
+.movement-list{max-height:260px; overflow-y:auto; border:1px solid var(--line); border-radius:8px;}
+.movement-item{display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px; gap:10px;}
+.movement-item:last-child{border-bottom:none;}
+.movement-item .amt.pos{color:var(--forest); font-family:'IBM Plex Mono',monospace; font-weight:600; white-space:nowrap;}
+.movement-item .amt.neg{color:var(--rust); font-family:'IBM Plex Mono',monospace; font-weight:600; white-space:nowrap;}
+
+.bar-chart{display:flex; align-items:flex-end; gap:6px; height:150px; padding:10px 2px 0;}
+.bar-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+.bar{width:100%; background:linear-gradient(180deg, var(--gold-light), var(--gold)); border-radius:4px 4px 0 0; min-height:2px;}
+.bar-col .m-label{font-size:9.5px; color:var(--ink-soft); margin-top:6px;}
+.bar-col .m-val{font-size:9px; font-family:'IBM Plex Mono',monospace; color:var(--forest-dark); margin-bottom:3px;}
+
+.toast{
+  position:fixed; bottom:calc(20px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+  background:var(--forest-dark); color:var(--white); padding:11px 20px; border-radius:8px;
+  font-size:13.5px; font-weight:600; box-shadow:0 6px 18px rgba(0,0,0,.25); z-index:50; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+  max-width:90vw; text-align:center;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+
+/* ---------- Auth gate ---------- */
+#authGate{
+  position:fixed; inset:0; background:linear-gradient(160deg, var(--forest) 0%, var(--forest-dark)100%);
+  display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.auth-card{
+  background:var(--white); border-radius:14px; padding:30px 26px; max-width:360px; width:100%;
+  box-shadow:0 16px 40px rgba(0,0,0,.3);
+}
+.auth-card .eyebrow{text-transform:uppercase; letter-spacing:2px; font-size:10.5px; color:var(--gold); font-weight:700;}
+.auth-card h1{font-family:'Fraunces',serif; font-size:24px; margin:4px 0 16px; color:var(--forest-dark);}
+.auth-card input{margin-bottom:10px;}
+.auth-card .btn{width:100%;}
+.auth-error{color:var(--rust); font-size:13px; font-weight:600; min-height:18px; margin-bottom:6px;}
+
+@media (max-width:640px){
+  .form-grid{grid-template-columns:1fr;}
+  .cover h1{font-size:21px;}
+  .cover-stats{gap:10px;}
+  .cover-stat{min-width:44%;}
+  .loan-head{flex-direction:column;}
+  .panel{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<div id="authGate">
+  <div class="auth-card">
+    <div class="eyebrow">Libro de Préstamos</div>
+    <h1>Acceso privado</h1>
+    <div class="auth-error" id="authError"></div>
+    <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password" />
+    <button class="btn" id="authEnterBtn">Entrar</button>
+    <p class="section-sub" style="margin-top:14px; margin-bottom:0;">Usa la contraseña de administrador para editar, o la de visitante solo para ver.</p>
+  </div>
+</div>
+
+<div id="shell" style="display:none;">
+  <div class="cover">
+    <div class="cover-top">
+      <div>
+        <div class="eyebrow">Gestión de bolsa y créditos</div>
+        <h1>Libro de Préstamos</h1>
+      </div>
+      <div class="role-pill" id="rolePill">Salir</div>
+    </div>
+    <div class="cover-stats" id="coverStats"></div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel" id="panel"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'prestamos-app-state-v3';
+const LEGACY_KEYS = ['prestamos-app-state-v2', 'prestamos-app-state-v1'];
+const ALL_TABS = [
+  {id:'resumen', label:'Resumen'},
+  {id:'cobros', label:'Cobros'},
+  {id:'prestamos', label:'Préstamos'},
+  {id:'nuevo', label:'Nuevo préstamo'},
+  {id:'bolsa', label:'Bolsa'},
+  {id:'reportes', label:'Reportes'},
+];
+let currentTab = 'resumen';
+let openLoanId = null;
+let editLoanId = null;
+let loanFormError = '';
+let editFormError = '';
+let currentRole = null; // 'admin' | 'visitor'
+
+let state = {
+  loans: [],
+  pool: { banks: [], movements: [] },
+  nextLoanId: 1,
+  nextBankId: 1,
+  auth: {
+    adminPassword: 'admin123',
+    visitorPassword: 'visita123',
+  },
+};
+
+const fmt = (n) => new Intl.NumberFormat('es-CO', {style:'currency', currency:'COP', maximumFractionDigits:0}).format(Math.round(n||0));
+const fmtDate = (d) => new Date(d+'T00:00:00').toLocaleDateString('es-CO', {year:'numeric', month:'short', day:'numeric'});
+const todayStr = () => new Date().toISOString().slice(0,10);
+const monthKey = (d) => d.slice(0,7);
+const monthLabel = (key) => {
+  const [y,m] = key.split('-');
+  return new Date(y, m-1, 1).toLocaleDateString('es-CO', {month:'long', year:'numeric'});
+};
+function isAdmin(){ return currentRole === 'admin'; }
+
+function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function addMonths(date, n){ const d = new Date(date); d.setMonth(d.getMonth()+n); return d; }
+function daysSince(dateStr){
+  if(!dateStr) return Infinity;
+  const a = new Date(dateStr+'T00:00:00');
+  const b = new Date(todayStr()+'T00:00:00');
+  return Math.round((b-a)/86400000);
+}
+function periodDate(startDate, freq, k){
+  if(freq==='semanal') return addDays(startDate, 7*k);
+  if(freq==='quincenal') return addDays(startDate, 15*k);
+  return addMonths(startDate, k);
+}
+const freqLabel = {semanal:'Semanal', quincenal:'Quincenal', mensual:'Mensual'};
+const typeLabel = {interes:'Solo interés (capital al final)', fijo:'Cuota fija (amortizable)', simple:'Interés simple prorrateado'};
+
+function generateSchedule(loan){
+  const {amount, rate, numPayments, frequency, type, startDate} = loan;
+  const i = rate/100;
+  const n = numPayments;
+  const sd = new Date(startDate+'T00:00:00');
+  const items = [];
+  if(type === 'interes'){
+    for(let k=1;k<=n;k++){
+      const interest = amount*i;
+      const capital = (k===n) ? amount : 0;
+      items.push({n:k, dueDate: periodDate(sd,frequency,k).toISOString().slice(0,10), interest, capital, total: interest+capital, paid:false, paidDate:null});
+    }
+  } else if(type === 'fijo'){
+    let balance = amount;
+    const cuota = i===0 ? amount/n : amount * i / (1 - Math.pow(1+i, -n));
+    for(let k=1;k<=n;k++){
+      let interest = balance*i;
+      let capital = cuota - interest;
+      if(k===n){ capital = balance; }
+      balance -= capital;
+      items.push({n:k, dueDate: periodDate(sd,frequency,k).toISOString().slice(0,10), interest, capital, total: interest+capital, paid:false, paidDate:null});
+    }
+  } else {
+    const totalInterest = amount*i*n;
+    const interestPer = totalInterest/n;
+    const capitalPer = amount/n;
+    for(let k=1;k<=n;k++){
+      items.push({n:k, dueDate: periodDate(sd,frequency,k).toISOString().slice(0,10), interest: interestPer, capital: capitalPer, total: interestPer+capitalPer, paid:false, paidDate:null});
+    }
+  }
+  return items;
+}
+
+function loanStatus(loan){
+  if(loan.schedule.every(it=>it.paid)) return 'completado';
+  const today = todayStr();
+  if(loan.schedule.some(it=>!it.paid && it.dueDate < today)) return 'mora';
+  return 'activo';
+}
+function loanPaidCount(loan){ return loan.schedule.filter(it=>it.paid).length; }
+function loanOutstandingCapital(loan){
+  return loan.schedule.filter(it=>!it.paid).reduce((s,it)=>s+it.capital,0);
+}
+function totalActiveCapital(){
+  return state.loans.reduce((s,l)=> s + loanOutstandingCapital(l), 0);
+}
+function poolTotalBalance(){
+  return state.pool.banks.reduce((s,b)=>s+b.balance,0);
+}
+function bankById(id){ return state.pool.banks.find(b=>b.id===id); }
+
+function interestEarnedInMonth(key){
+  let sum = 0;
+  state.loans.forEach(l=> l.schedule.forEach(it=>{
+    if(it.paid && monthKey(it.paidDate)===key) sum += it.interest;
+  }));
+  return sum;
+}
+function poolYieldInMonth(key){
+  return state.pool.movements.filter(m=>m.type==='rendimiento' && monthKey(m.date)===key).reduce((s,m)=>s+m.amount,0);
+}
+function pendingItems(){
+  let list = [];
+  state.loans.forEach(l=> l.schedule.forEach(it=>{ if(!it.paid) list.push({loan:l, item:it}); }));
+  list.sort((a,b)=> a.item.dueDate.localeCompare(b.item.dueDate));
+  return list;
+}
+function overdueItems(){ const today = todayStr(); return pendingItems().filter(p=>p.item.dueDate < today); }
+function upcomingItems(){ const today = todayStr(); return pendingItems().filter(p=>p.item.dueDate >= today); }
+
+/* ---------------- Daily accrual ---------------- */
+function accrueBank(bank, uptoStr){
+  if(!bank.lastAccrualDate){ bank.lastAccrualDate = uptoStr; return; }
+  let cursor = new Date(bank.lastAccrualDate+'T00:00:00');
+  const target = new Date(uptoStr+'T00:00:00');
+  let guard = 0;
+  while(cursor < target && guard < 3650){
+    cursor = addDays(cursor, 1);
+    guard++;
+    const dailyRate = (bank.rate/100)/365;
+    const interest = bank.balance * dailyRate;
+    if(interest > 0){
+      bank.balance += interest;
+      const dstr = cursor.toISOString().slice(0,10);
+      state.pool.movements.unshift({date: dstr, type:'rendimiento', bankId:bank.id, amount:interest, note:`Rendimiento diario — ${bank.name}`});
+    }
+  }
+  bank.lastAccrualDate = uptoStr;
+}
+function accrueAllBanks(){
+  const today = todayStr();
+  state.pool.banks.forEach(b=> accrueBank(b, today));
+}
+
+/* ---------------- Storage: shared (Claude artifact link) with local fallback (standalone phone use) ---------------- */
+async function storageGetRaw(){
+  if(window.storage){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if(res && res.value) return res.value;
+    }catch(e){ /* not available / not found */ }
+  }
+  try{ return localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+}
+async function storageSetRaw(json){
+  if(window.storage){
+    try{ await window.storage.set(STORAGE_KEY, json, true); }catch(e){ /* ignore */ }
+  }
+  try{ localStorage.setItem(STORAGE_KEY, json); }catch(e){ /* ignore */ }
+}
+async function loadState(){
+  try{
+    const raw = await storageGetRaw();
+    if(raw){ state = JSON.parse(raw); }
+    else{
+      for(const key of LEGACY_KEYS){
+        try{
+          const legacyRaw = localStorage.getItem(key);
+          if(legacyRaw){ migrateLegacy(JSON.parse(legacyRaw)); break; }
+        }catch(e){}
+      }
+    }
+  }catch(e){ /* first run or storage blocked */ }
+  ensureDefaults();
+  accrueAllBanks();
+  await saveState();
+  initAuth();
+}
+function ensureDefaults(){
+  if(!state.pool) state.pool = {banks:[], movements:[]};
+  if(!state.pool.banks) state.pool.banks = [];
+  if(!state.pool.movements) state.pool.movements = [];
+  if(!state.loans) state.loans = [];
+  if(!state.nextBankId) state.nextBankId = (state.pool.banks.length ? Math.max(...state.pool.banks.map(b=>b.id))+1 : 1);
+  if(!state.nextLoanId) state.nextLoanId = (state.loans.length ? Math.max(...state.loans.map(l=>l.id))+1 : 1);
+  if(!state.auth) state.auth = {adminPassword:'admin123', visitorPassword:'visita123'};
+}
+function migrateLegacy(old){
+  if(old.pool && old.pool.banks){
+    // already v2 shape
+    state = old;
+    return;
+  }
+  const bank = {
+    id: 1, name:'Caja general',
+    rate: (old.pool && typeof old.pool.rate==='number') ? old.pool.rate*12 : 12,
+    balance: (old.pool && old.pool.balance) || 0,
+    lastAccrualDate: todayStr(),
+  };
+  state = {
+    loans: (old.loans||[]).map(l=>({...l, bankId:1})),
+    pool: { banks:[bank], movements: (old.pool && old.pool.movements) || [] },
+    nextLoanId: old.nextLoanId || 1,
+    nextBankId: 2,
+  };
+}
+async function saveState(){
+  try{ await storageSetRaw(JSON.stringify(state)); }
+  catch(e){ showToast('No se pudo guardar.'); }
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+function generateSyncCode(){
+  try{
+    const json = JSON.stringify(state);
+    const code = 'PRESTAMOS1:' + btoa(unescape(encodeURIComponent(json)));
+    return code;
+  }catch(e){
+    showToast('No se pudo generar el código.');
+    return '';
+  }
+}
+function loadSyncCode(code){
+  code = (code||'').trim();
+  if(!code){ showToast('Pega un código primero.'); return; }
+  if(!code.startsWith('PRESTAMOS1:')){ showToast('Ese código no parece válido.'); return; }
+  try{
+    const json = decodeURIComponent(escape(atob(code.slice('PRESTAMOS1:'.length))));
+    const parsed = JSON.parse(json);
+    if(!parsed.loans || !parsed.pool){ showToast('El código no tiene el formato esperado.'); return; }
+    if(!confirm('Esto reemplazará todos los datos actuales de este dispositivo por los del código. ¿Continuar?')) return;
+    state = parsed;
+    ensureDefaults();
+    accrueAllBanks();
+    saveState();
+    render();
+    showToast('Datos cargados correctamente.');
+  }catch(e){
+    showToast('No se pudo leer el código. Verifica que esté completo.');
+  }
+}
+
+/* ---------------- Auth ---------------- */
+function initAuth(){
+  const saved = sessionStorage.getItem('prestamos-role');
+  if(saved === 'admin' || saved === 'visitor'){ currentRole = saved; showApp(); }
+  else{ showAuthGate(); }
+  document.getElementById('authEnterBtn').addEventListener('click', doLogin);
+  document.getElementById('authPassword').addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
+}
+function doLogin(){
+  const pw = document.getElementById('authPassword').value;
+  if(pw && pw === state.auth.adminPassword){ currentRole='admin'; sessionStorage.setItem('prestamos-role','admin'); showApp(); }
+  else if(pw && pw === state.auth.visitorPassword){ currentRole='visitor'; sessionStorage.setItem('prestamos-role','visitor'); showApp(); }
+  else{ document.getElementById('authError').textContent = 'Contraseña incorrecta. Intenta de nuevo.'; }
+}
+function showAuthGate(){
+  document.getElementById('authGate').style.display='flex';
+  document.getElementById('shell').style.display='none';
+  document.getElementById('authPassword').value='';
+  document.getElementById('authError').textContent='';
+}
+function showApp(){
+  document.getElementById('authGate').style.display='none';
+  document.getElementById('shell').style.display='block';
+  if(!isAdmin() && currentTab==='nuevo') currentTab='resumen';
+  render();
+}
+function logout(){
+  sessionStorage.removeItem('prestamos-role');
+  currentRole = null;
+  showAuthGate();
+}
+
+/* ---------------- Actions: loans ---------------- */
+function createLoan(data){
+  loanFormError = '';
+  if(!data.name){ loanFormError = 'Escribe el nombre del cliente.'; render(); return; }
+  if(!data.bankId){ loanFormError = 'Selecciona de qué banco sale el dinero.'; render(); return; }
+  const bank = bankById(data.bankId);
+  if(!bank){ loanFormError = 'El banco seleccionado ya no existe.'; render(); return; }
+  if(!data.amount || data.amount <= 0){ loanFormError = 'El monto debe ser mayor a cero.'; render(); return; }
+  if(!data.numPayments || data.numPayments <= 0){ loanFormError = 'La cantidad de cuotas debe ser mayor a cero.'; render(); return; }
+  if(data.amount > bank.balance){
+    loanFormError = `Fondos insuficientes en ${bank.name}. Disponible: ${fmt(bank.balance)}.`;
+    render(); return;
+  }
+  const loan = {
+    id: state.nextLoanId++,
+    name: data.name, address: data.address, amount: data.amount, rate: data.rate,
+    frequency: data.frequency, numPayments: data.numPayments, type: data.type,
+    startDate: data.startDate, bankId: data.bankId,
+  };
+  loan.schedule = generateSchedule(loan);
+  bank.balance -= data.amount;
+  state.pool.movements.unshift({date: todayStr(), type:'prestamo', bankId:bank.id, amount:-data.amount, note:`Préstamo entregado a ${data.name} (desde ${bank.name})`});
+  state.loans.unshift(loan);
+  loanFormError = '';
+  saveState();
+  openLoanId = loan.id;
+  currentTab = 'prestamos';
+  render();
+  showToast('Préstamo registrado. Aquí tienes el plan de pagos.');
+}
+function registerPayment(loanId, n){
+  const loan = state.loans.find(l=>l.id===loanId);
+  const item = loan.schedule.find(it=>it.n===n);
+  if(!item || item.paid) return;
+  item.paid = true;
+  item.paidDate = todayStr();
+  let bank = bankById(loan.bankId);
+  if(!bank) bank = state.pool.banks[0];
+  if(bank){
+    bank.balance += item.total;
+    state.pool.movements.unshift({date:item.paidDate, type:'pago', bankId:bank.id, amount:item.total, note:`Cuota ${n} de ${loan.name} — interés ${fmt(item.interest)}, capital ${fmt(item.capital)} → ${bank.name}`});
+  }
+  saveState(); render();
+  showToast('Pago registrado y devuelto a la bolsa.');
+}
+function editLoan(id, data){
+  editFormError = '';
+  const loan = state.loans.find(l=>l.id===id);
+  if(!loan){ return; }
+  if(!data.name){ editFormError = 'Escribe el nombre del cliente.'; render(); return; }
+  const newBank = bankById(data.bankId);
+  if(!newBank){ editFormError = 'Selecciona un banco válido.'; render(); return; }
+  if(!data.amount || data.amount <= 0){ editFormError = 'El monto debe ser mayor a cero.'; render(); return; }
+  if(!data.numPayments || data.numPayments <= 0){ editFormError = 'La cantidad de cuotas debe ser mayor a cero.'; render(); return; }
+
+  const oldBank = bankById(loan.bankId);
+  const sameBank = oldBank && oldBank.id === newBank.id;
+  const availableForThisLoan = sameBank ? newBank.balance + loan.amount : newBank.balance;
+  if(data.amount > availableForThisLoan){
+    editFormError = `Fondos insuficientes en ${newBank.name} para este monto. Disponible: ${fmt(availableForThisLoan)}.`;
+    render(); return;
+  }
+  // Apply bank balance corrections
+  if(sameBank){
+    const diff = data.amount - loan.amount; // positive = need more money out of the bank
+    newBank.balance -= diff;
+    if(diff !== 0){
+      state.pool.movements.unshift({date: todayStr(), type:'correccion', bankId:newBank.id, amount:-diff, note:`Corrección de préstamo de ${loan.name}: monto ajustado de ${fmt(loan.amount)} a ${fmt(data.amount)}`});
+    }
+  } else {
+    if(oldBank){
+      oldBank.balance += loan.amount;
+      state.pool.movements.unshift({date: todayStr(), type:'correccion', bankId:oldBank.id, amount:loan.amount, note:`Corrección: préstamo de ${loan.name} movido a otro banco, se reintegra a ${oldBank.name}`});
+    }
+    newBank.balance -= data.amount;
+    state.pool.movements.unshift({date: todayStr(), type:'correccion', bankId:newBank.id, amount:-data.amount, note:`Corrección: préstamo de ${loan.name} ahora sale de ${newBank.name}`});
+  }
+
+  const paidCount = loanPaidCount(loan);
+  const oldSchedule = loan.schedule;
+  loan.name = data.name;
+  loan.address = data.address;
+  loan.amount = data.amount;
+  loan.rate = data.rate;
+  loan.frequency = data.frequency;
+  loan.numPayments = data.numPayments;
+  loan.type = data.type;
+  loan.startDate = data.startDate;
+  loan.bankId = data.bankId;
+  const newSchedule = generateSchedule(loan);
+  for(let idx=0; idx<Math.min(paidCount, newSchedule.length); idx++){
+    newSchedule[idx] = {...oldSchedule[idx], n: idx+1};
+  }
+  loan.schedule = newSchedule;
+  editFormError = '';
+  editLoanId = null;
+  saveState(); render();
+  showToast('Préstamo corregido.');
+}
+function deleteLoan(id){
+  const loan = state.loans.find(l=>l.id===id);
+  if(!loan) return;
+  if(!confirm(`¿Eliminar el préstamo de ${loan.name}? El capital pendiente (${fmt(loanOutstandingCapital(loan))}) se reintegrará a la bolsa.`)) return;
+  const bank = bankById(loan.bankId);
+  const outstanding = loanOutstandingCapital(loan);
+  if(bank && outstanding > 0){
+    bank.balance += outstanding;
+    state.pool.movements.unshift({date: todayStr(), type:'correccion', bankId:bank.id, amount:outstanding, note:`Préstamo de ${loan.name} eliminado, se reintegra capital pendiente a ${bank.name}`});
+  }
+  state.loans = state.loans.filter(l=>l.id!==id);
+  if(openLoanId===id) openLoanId=null;
+  if(editLoanId===id) editLoanId=null;
+  saveState(); render();
+  showToast('Préstamo eliminado.');
+}
+
+/* ---------------- Actions: banks (bolsa) ---------------- */
+function addBank(name, rate, balance){
+  if(!name){ showToast('Escribe el nombre del banco.'); return; }
+  const bank = {id: state.nextBankId++, name, rate: rate||0, balance: balance||0, lastAccrualDate: todayStr()};
+  state.pool.banks.push(bank);
+  if(balance>0) state.pool.movements.unshift({date: todayStr(), type:'deposito', bankId:bank.id, amount:balance, note:`Depósito inicial — ${name}`});
+  saveState(); render();
+  showToast('Banco agregado a la bolsa.');
+}
+function updateBank(id, name, rate){
+  const bank = bankById(id);
+  if(!bank) return;
+  bank.name = name; bank.rate = rate;
+  saveState(); render();
+  showToast('Banco actualizado.');
+}
+function depositToBank(id, amount){
+  if(!amount || amount<=0){ showToast('Escribe un monto válido para depositar.'); return; }
+  bankMovement(id, Math.abs(amount), `Depósito manual — ${bankById(id)?.name||''}`);
+}
+function withdrawFromBank(id, amount){
+  if(!amount || amount<=0){ showToast('Escribe un monto válido para retirar.'); return; }
+  bankMovement(id, -Math.abs(amount), `Retiro manual — ${bankById(id)?.name||''}`);
+}
+function setBankBalance(id, newValue){
+  const bank = bankById(id);
+  if(!bank) return;
+  if(newValue<0){ showToast('El saldo no puede ser negativo.'); return; }
+  const diff = newValue - bank.balance;
+  if(diff === 0) return;
+  bank.balance = newValue;
+  state.pool.movements.unshift({date: todayStr(), type: diff>0?'deposito':'retiro', bankId:id, amount:diff, note:`Ajuste manual de saldo — ${bank.name} (nuevo saldo: ${fmt(newValue)})`});
+  saveState(); render();
+  showToast('Saldo del banco actualizado.');
+}
+function bankMovement(id, amount, note){
+  const bank = bankById(id);
+  if(!bank || !amount) return;
+  if(amount < 0 && Math.abs(amount) > bank.balance){ showToast(`${bank.name} no tiene fondos suficientes para ese retiro.`); return; }
+  bank.balance += amount;
+  state.pool.movements.unshift({date: todayStr(), type: amount>0?'deposito':'retiro', bankId:id, amount, note: note || (amount>0?`Depósito manual — ${bank.name}`:`Retiro manual — ${bank.name}`)});
+  saveState(); render();
+  showToast('Movimiento registrado.');
+}
+
+/* ---------------- Rendering ---------------- */
+function render(){
+  renderCover();
+  renderTabs();
+  renderPanel();
+}
+
+function renderCover(){
+  const el = document.getElementById('coverStats');
+  const activeCapital = totalActiveCapital();
+  const key = monthKey(todayStr());
+  const interestMonth = interestEarnedInMonth(key) + poolYieldInMonth(key);
+  const overdue = overdueItems();
+  el.innerHTML = `
+    <div class="cover-stat"><div class="label">Bolsa disponible</div><div class="value">${fmt(poolTotalBalance())}</div></div>
+    <div class="cover-stat"><div class="label">Capital prestado activo</div><div class="value">${fmt(activeCapital)}</div></div>
+    <div class="cover-stat"><div class="label">Ganado este mes</div><div class="value warn">${fmt(interestMonth)}</div></div>
+    <div class="cover-stat"><div class="label">Cobros vencidos</div><div class="value ${overdue.length>0?'warn':''}">${overdue.length}</div></div>
+  `;
+  const pill = document.getElementById('rolePill');
+  pill.textContent = (isAdmin() ? 'Administrador · Salir' : 'Visitante · Salir');
+  pill.onclick = logout;
+}
+
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  const tabs = isAdmin() ? ALL_TABS : ALL_TABS.filter(t=>t.id!=='nuevo');
+  el.innerHTML = tabs.map(t=>`<div class="tab ${t.id===currentTab?'active':''}" data-tab="${t.id}">${t.label}</div>`).join('');
+  el.querySelectorAll('.tab').forEach(node=>{
+    node.addEventListener('click', ()=>{ currentTab = node.dataset.tab; render(); });
+  });
+}
+
+function renderPanel(){
+  const panel = document.getElementById('panel');
+  if(currentTab==='resumen') panel.innerHTML = viewResumen();
+  else if(currentTab==='cobros') panel.innerHTML = viewCobros();
+  else if(currentTab==='prestamos') panel.innerHTML = viewPrestamos();
+  else if(currentTab==='nuevo') panel.innerHTML = isAdmin() ? viewNuevo() : `<div class="empty">Esta sección requiere acceso de administrador.</div>`;
+  else if(currentTab==='bolsa') panel.innerHTML = viewBolsa();
+  else if(currentTab==='reportes') panel.innerHTML = viewReportes();
+  bindPanelEvents();
+  if(currentTab==='prestamos' && openLoanId){
+    const el = document.querySelector(`[data-loan-row="${openLoanId}"]`);
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
+function rowsForItems(items){
+  const today = todayStr();
+  return items.map(({loan,item})=>{
+    const vencida = item.dueDate < today;
+    return `<tr>
+      <td>${loan.name}</td>
+      <td>${item.n} / ${loan.numPayments}</td>
+      <td>${fmtDate(item.dueDate)}</td>
+      <td class="mono">${fmt(item.interest)}</td>
+      <td class="mono">${fmt(item.capital)}</td>
+      <td class="mono">${fmt(item.total)}</td>
+      <td><span class="badge ${vencida?'vencida':'pendiente'}">${vencida?'Vencida':'Pendiente'}</span></td>
+      <td>${isAdmin() ? `<button class="btn small" data-pay-loan="${loan.id}" data-pay-n="${item.n}">Marcar pagada</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+function tableWrap(theadCols, bodyHtml){
+  return `<div class="tbl-scroll"><table><thead><tr>${theadCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`;
+}
+
+function viewResumen(){
+  const activeCapital = totalActiveCapital();
+  const totalWorth = poolTotalBalance() + activeCapital;
+  const pct = totalWorth>0 ? Math.round((poolTotalBalance()/totalWorth)*100) : 100;
+  const overdue = overdueItems();
+  const upcoming = upcomingItems().slice(0,6);
+  const cols = ['Cliente','Cuota','Vence','Interés','Capital','Total','Estado',''];
+
+  return `
+  <h2 class="section-title">Resumen general</h2>
+  <p class="section-sub">Así está distribuido tu dinero hoy, ${fmtDate(todayStr())}.</p>
+  <div class="jar-wrap">
+    <div class="jar">
+      <div class="jar-fill" style="height:${pct}%"></div>
+      <div class="jar-label">${pct}%<br>ociosa</div>
+    </div>
+    <div class="jar-caption">
+      <strong>${fmt(poolTotalBalance())}</strong> están en la bolsa (repartidos en ${state.pool.banks.length} banco(s)) generando rentabilidad diaria.<br>
+      <strong>${fmt(activeCapital)}</strong> están prestados y en proceso de recuperación.
+    </div>
+  </div>
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Cobros vencidos ${overdue.length? `<span class="badge vencida">${overdue.length}</span>`:''}</h3>
+  ${overdue.length===0 ? `<div class="empty">No tienes cobros vencidos. 🎉</div>` : tableWrap(cols, rowsForItems(overdue))}
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Próximos a vencer</h3>
+  ${upcoming.length===0 ? `<div class="empty">No hay más cuotas pendientes.</div>` : tableWrap(cols, rowsForItems(upcoming))}
+  `;
+}
+
+function viewCobros(){
+  const overdue = overdueItems();
+  const upcoming = upcomingItems();
+  const totalOverdue = overdue.reduce((s,p)=>s+p.item.total,0);
+  const totalUpcoming = upcoming.reduce((s,p)=>s+p.item.total,0);
+  const cols = ['Cliente','Cuota','Vence','Interés','Capital','Total','Estado',''];
+  return `
+  <h2 class="section-title">Cobros pendientes y vencidos</h2>
+  <p class="section-sub">Todas las cuotas que aún no se han pagado, en un solo lugar.</p>
+  <div class="grid">
+    <div class="card"><div class="label">Total vencido</div><div class="num rust">${fmt(totalOverdue)}</div></div>
+    <div class="card"><div class="label">Total pendiente</div><div class="num">${fmt(totalUpcoming)}</div></div>
+    <div class="card"><div class="label">Cuotas por cobrar</div><div class="num">${overdue.length+upcoming.length}</div></div>
+  </div>
+  <div style="height:18px"></div>
+  <h3 class="subsection-title">Vencidas (${overdue.length})</h3>
+  ${overdue.length===0 ? `<div class="empty">No hay cobros vencidos.</div>` : tableWrap(cols, rowsForItems(overdue))}
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Pendientes, al día (${upcoming.length})</h3>
+  ${upcoming.length===0 ? `<div class="empty">No hay más cuotas pendientes.</div>` : tableWrap(cols, rowsForItems(upcoming))}
+  `;
+}
+
+function loanEditForm(l){
+  const banks = state.pool.banks;
+  return `
+  <h3 class="subsection-title">Corregir información del préstamo</h3>
+  ${editFormError ? `<div class="form-error">${editFormError}</div>` : ''}
+  ${loanPaidCount(l)>0 ? `<div class="info-note">Este préstamo ya tiene ${loanPaidCount(l)} cuota(s) pagada(s); esas quedarán tal como están. Los cambios solo afectan las cuotas pendientes y, si cambias el monto o el banco, se ajusta el saldo correspondiente.</div>` : ''}
+  <div class="form-grid">
+    <div><label>Nombre del cliente</label><input type="text" id="edit-name-${l.id}" value="${l.name}" /></div>
+    <div><label>Dirección</label><input type="text" id="edit-address-${l.id}" value="${l.address||''}" /></div>
+    <div><label>Monto prestado (COP)</label><input type="number" id="edit-amount-${l.id}" value="${l.amount}" /></div>
+    <div><label>Tasa de interés por cuota (%)</label><input type="number" step="0.1" id="edit-rate-${l.id}" value="${l.rate}" /></div>
+    <div><label>Frecuencia de pago</label>
+      <select id="edit-frequency-${l.id}">
+        <option value="semanal" ${l.frequency==='semanal'?'selected':''}>Semanal</option>
+        <option value="quincenal" ${l.frequency==='quincenal'?'selected':''}>Quincenal</option>
+        <option value="mensual" ${l.frequency==='mensual'?'selected':''}>Mensual</option>
+      </select>
+    </div>
+    <div><label>Cantidad de cuotas</label><input type="number" id="edit-numPayments-${l.id}" value="${l.numPayments}" /></div>
+    <div><label>Tipo de préstamo</label>
+      <select id="edit-type-${l.id}">
+        <option value="interes" ${l.type==='interes'?'selected':''}>Solo interés (capital al final)</option>
+        <option value="fijo" ${l.type==='fijo'?'selected':''}>Cuota fija (amortizable)</option>
+        <option value="simple" ${l.type==='simple'?'selected':''}>Interés simple prorrateado</option>
+      </select>
+    </div>
+    <div><label>Fecha de inicio</label><input type="date" id="edit-startDate-${l.id}" value="${l.startDate}" /></div>
+    <div><label>Banco de origen</label>
+      <select id="edit-bankId-${l.id}">
+        ${banks.map(b=>`<option value="${b.id}" ${b.id===l.bankId?'selected':''}>${b.name} — disponible ${fmt(b.balance)}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div style="margin-top:14px; display:flex; gap:10px;">
+    <button class="btn" data-save-edit-loan="${l.id}">Guardar corrección</button>
+    <button class="btn secondary" data-cancel-edit-loan="${l.id}">Cancelar</button>
+  </div>
+  `;
+}
+
+function viewPrestamos(){
+  if(state.loans.length===0){
+    return `<h2 class="section-title">Préstamos</h2><div class="empty"><div class="big">Aún no hay préstamos registrados</div>${isAdmin() ? 'Ve a la pestaña "Nuevo préstamo" para crear el primero.' : 'Aún no se han registrado préstamos.'}</div>`;
+  }
+  return `
+  <h2 class="section-title">Préstamos</h2>
+  <p class="section-sub">${state.loans.length} préstamo(s) registrados. Haz clic en uno para ver el plan de pagos${isAdmin()?' y corregir su información':''}.</p>
+  ${state.loans.map(l=>{
+    const status = loanStatus(l);
+    const paid = loanPaidCount(l);
+    const pct = Math.round((paid/l.numPayments)*100);
+    const open = openLoanId===l.id;
+    const editing = editLoanId===l.id;
+    const bank = bankById(l.bankId);
+    return `
+    <div class="loan-row ${open?'highlight':''}" data-loan-row="${l.id}">
+      <div class="loan-head" data-toggle-loan="${l.id}">
+        <div>
+          <div class="loan-name">${l.name}</div>
+          <div class="loan-meta">${l.address || 'Sin dirección'} · ${freqLabel[l.frequency]} · ${l.rate}% · ${typeLabel[l.type]} · desde ${bank?bank.name:'—'}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div style="text-align:right;">
+          <span class="badge ${status}">${status[0].toUpperCase()+status.slice(1)}</span>
+          <div class="loan-meta mono" style="margin-top:6px;">${fmt(l.amount)}</div>
+        </div>
+      </div>
+      ${isAdmin() ? `
+      <div class="loan-admin-actions">
+        <button class="btn secondary small" data-edit-loan="${l.id}">${editing?'Cerrar edición':'Corregir información'}</button>
+        <button class="btn rust small" data-delete-loan="${l.id}">Eliminar préstamo</button>
+      </div>` : ''}
+      <div class="loan-body ${open?'open':''}">
+        ${editing ? loanEditForm(l) : `
+        <h3 class="subsection-title">Plan de pagos</h3>
+        ${tableWrap(['#','Vence','Interés','Capital','Total','Estado',''], l.schedule.map(it=>{
+          const vencida = !it.paid && it.dueDate < todayStr();
+          return `<tr>
+            <td>${it.n}</td>
+            <td>${fmtDate(it.dueDate)}</td>
+            <td class="mono">${fmt(it.interest)}</td>
+            <td class="mono">${fmt(it.capital)}</td>
+            <td class="mono">${fmt(it.total)}</td>
+            <td><span class="badge ${it.paid?'pagada':(vencida?'vencida':'pendiente')}">${it.paid? 'Pagada '+fmtDate(it.paidDate) : (vencida?'Vencida':'Pendiente')}</span></td>
+            <td>${it.paid?'' : (isAdmin() ? `<button class="btn small" data-pay-loan="${l.id}" data-pay-n="${it.n}">Marcar pagada</button>` : '')}</td>
+          </tr>`;
+        }).join(''))}
+        `}
+      </div>
+    </div>`;
+  }).join('')}
+  `;
+}
+
+function viewNuevo(){
+  const banks = state.pool.banks;
+  if(banks.length===0){
+    return `
+    <h2 class="section-title">Registrar nuevo préstamo</h2>
+    <div class="empty">
+      <div class="big">Primero necesitas un banco en la bolsa</div>
+      El dinero de cada préstamo se retira de un banco. Ve a la pestaña "Bolsa" y agrega al menos uno con su saldo inicial.
+    </div>`;
+  }
+  return `
+  <h2 class="section-title">Registrar nuevo préstamo</h2>
+  <p class="section-sub">El monto se descuenta del banco que elijas. Bolsa total disponible: ${fmt(poolTotalBalance())}.</p>
+  ${loanFormError ? `<div class="form-error">${loanFormError}</div>` : ''}
+  <form id="loanForm" novalidate>
+    <div class="form-grid">
+      <div><label>Nombre del cliente</label><input type="text" name="name" /></div>
+      <div><label>Dirección</label><input type="text" name="address" /></div>
+      <div><label>Monto prestado (COP)</label><input type="number" name="amount" min="1" step="1" /></div>
+      <div><label>Tasa de interés por cuota (%)</label><input type="number" name="rate" min="0" step="0.1" /></div>
+      <div><label>Frecuencia de pago</label>
+        <select name="frequency">
+          <option value="semanal">Semanal</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="mensual" selected>Mensual</option>
+        </select>
+      </div>
+      <div><label>Cantidad de cuotas</label><input type="number" name="numPayments" min="1" step="1" /></div>
+      <div><label>Tipo de préstamo</label>
+        <select name="type">
+          <option value="interes">Solo interés (capital al final)</option>
+          <option value="fijo">Cuota fija (amortizable)</option>
+          <option value="simple">Interés simple prorrateado</option>
+        </select>
+      </div>
+      <div><label>Fecha de inicio</label><input type="date" name="startDate" value="${todayStr()}" /></div>
+      <div><label>Retirar de banco</label>
+        <select name="bankId">
+          ${banks.map(b=>`<option value="${b.id}">${b.name} — disponible ${fmt(b.balance)}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:18px;"><button type="submit" class="btn" id="submitLoanBtn">Registrar préstamo</button></div>
+  </form>
+  `;
+}
+
+function viewBolsa(){
+  const banks = state.pool.banks;
+  const admin = isAdmin();
+  return `
+  <h2 class="section-title">Bolsa de capital</h2>
+  <p class="section-sub">El dinero que no está prestado permanece repartido en tus bancos, generando rentabilidad día a día según la tasa anual de cada uno.</p>
+  <div class="grid">
+    <div class="card"><div class="label">Bolsa total</div><div class="num">${fmt(poolTotalBalance())}</div></div>
+    <div class="card"><div class="label">Capital prestado activo</div><div class="num">${fmt(totalActiveCapital())}</div></div>
+    <div class="card"><div class="label">Bancos registrados</div><div class="num">${banks.length}</div></div>
+  </div>
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Bancos</h3>
+  ${banks.length===0 ? `<div class="empty">Aún no has agregado ningún banco.</div>` : banks.map(b=>`
+    <div class="bank-card">
+      <div class="bank-card-top">
+        <div>
+          <div class="bank-name">${b.name}</div>
+          <div class="bank-rate">${b.rate}% E.A. · rendimiento diario ≈ ${fmt(b.balance*(b.rate/100/365))}</div>
+        </div>
+        <div class="bank-balance">${fmt(b.balance)}</div>
+      </div>
+      ${admin ? `
+      <div class="bank-action-group">
+        <div class="grp-label">Editar nombre / tasa</div>
+        <div class="bank-edit-row">
+          <div class="field"><label style="margin:0;">Nombre</label><input class="wide" type="text" id="bankName-${b.id}" value="${b.name}" /></div>
+          <div class="field"><label style="margin:0;">Tasa anual %</label><input type="number" step="0.1" id="bankRate-${b.id}" value="${b.rate}" /></div>
+          <button class="btn secondary small" data-save-bank="${b.id}">Guardar</button>
+        </div>
+      </div>
+      <div class="bank-action-group">
+        <div class="grp-label">Depositar o retirar</div>
+        <div class="bank-edit-row">
+          <div class="field"><label style="margin:0;">Depositar</label><input type="number" id="bankDep-${b.id}" placeholder="Monto" /></div>
+          <button class="btn small" data-deposit-bank="${b.id}">Depositar</button>
+          <div class="field"><label style="margin:0;">Retirar</label><input type="number" id="bankWd-${b.id}" placeholder="Monto" /></div>
+          <button class="btn rust small" data-withdraw-bank="${b.id}">Retirar</button>
+        </div>
+      </div>
+      <div class="bank-action-group">
+        <div class="grp-label">Corregir saldo exacto</div>
+        <div class="bank-edit-row">
+          <div class="field"><label style="margin:0;">Nuevo saldo total</label><input type="number" id="bankSet-${b.id}" placeholder="${b.balance}" /></div>
+          <button class="btn secondary small" data-set-bank="${b.id}">Fijar saldo</button>
+        </div>
+      </div>` : ''}
+    </div>
+  `).join('')}
+  ${admin ? `
+  <div style="height:8px"></div>
+  <h3 class="subsection-title">Agregar banco</h3>
+  <div class="form-grid">
+    <div><label>Nombre del banco</label><input type="text" id="newBankName" placeholder="Ej. Bancolombia, Nequi, Efectivo..." /></div>
+    <div><label>Tasa de interés anual (%)</label><input type="number" step="0.1" id="newBankRate" placeholder="Ej. 9.5" /></div>
+    <div><label>Saldo inicial (COP)</label><input type="number" id="newBankBalance" placeholder="0" /></div>
+    <div style="display:flex; align-items:flex-end;"><button class="btn" id="addBankBtn">Agregar banco</button></div>
+  </div>
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Acceso: contraseñas de administrador y visitante</h3>
+  <p class="section-sub">Comparte la de administrador solo contigo o con quien pueda editar. La de visitante déjala para quien solo debe consultar.</p>
+  <div class="form-grid">
+    <div><label>Contraseña de administrador</label><input type="text" id="pwAdmin" value="${state.auth.adminPassword}" /></div>
+    <div><label>Contraseña de visitante</label><input type="text" id="pwVisitor" value="${state.auth.visitorPassword}" /></div>
+  </div>
+  <div style="margin-top:10px;"><button class="btn secondary" id="pwSaveBtn">Guardar contraseñas</button></div>
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Sincronizar entre dispositivos</h3>
+  <p class="section-sub">Genera un código con todos tus datos actuales y pégalo en la app abierta en otro celular (o envíaselo a otra persona por WhatsApp/correo para que lo pegue). Esto reemplaza todos los datos del dispositivo donde se pega.</p>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+    <button class="btn secondary" id="genSyncBtn">Generar código</button>
+    <button class="btn secondary" id="copySyncBtn">Copiar código</button>
+  </div>
+  <textarea id="syncCodeOutput" readonly rows="3" style="width:100%; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--paper); resize:vertical;" placeholder="Aquí aparecerá el código al generarlo..."></textarea>
+  <div style="height:14px"></div>
+  <label>Pegar código recibido</label>
+  <textarea id="syncCodeInput" rows="3" style="width:100%; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--paper); resize:vertical;" placeholder="Pega aquí el código que te compartieron..."></textarea>
+  <div style="margin-top:10px;"><button class="btn" id="loadSyncBtn">Cargar código en este dispositivo</button></div>
+  ` : ''}
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Historial de movimientos</h3>
+  <div class="movement-list">
+    ${state.pool.movements.length===0 ? `<div class="empty">Sin movimientos todavía.</div>` :
+      state.pool.movements.slice(0,200).map(m=>`
+      <div class="movement-item">
+        <span>${fmtDate(m.date)} — ${m.note}</span>
+        <span class="amt ${m.amount>=0?'pos':'neg'}">${m.amount>=0?'+':''}${fmt(m.amount)}</span>
+      </div>`).join('')}
+  </div>
+  `;
+}
+
+function viewReportes(){
+  const years = new Set([new Date().getFullYear()]);
+  state.loans.forEach(l=>l.schedule.forEach(it=>{ if(it.paid) years.add(new Date(it.paidDate+'T00:00:00').getFullYear()); }));
+  state.pool.movements.forEach(m=>years.add(new Date(m.date+'T00:00:00').getFullYear()));
+  const yearList = Array.from(years).sort((a,b)=>b-a);
+  const year = viewReportes.selectedYear || yearList[0];
+  viewReportes.selectedYear = year;
+
+  const months = [];
+  for(let m=0;m<12;m++){
+    const key = `${year}-${String(m+1).padStart(2,'0')}`;
+    const interest = interestEarnedInMonth(key);
+    const yieldAmt = poolYieldInMonth(key);
+    months.push({key, label: new Date(year,m,1).toLocaleDateString('es-CO',{month:'short'}), interest, yieldAmt, total: interest+yieldAmt});
+  }
+  const max = Math.max(1, ...months.map(m=>m.total));
+  const yearTotal = months.reduce((s,m)=>s+m.total,0);
+
+  return `
+  <h2 class="section-title">Reportes de ganancias</h2>
+  <p class="section-sub">Intereses de préstamos + rendimiento diario de la bolsa, mes a mes.</p>
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+    <label style="margin:0;">Año</label>
+    <select id="yearSelect" style="max-width:120px;">
+      ${yearList.map(y=>`<option value="${y}" ${y==year?'selected':''}>${y}</option>`).join('')}
+    </select>
+    <span class="section-sub" style="margin:0;">Total del año: <strong class="mono">${fmt(yearTotal)}</strong></span>
+  </div>
+  <div class="bar-chart">
+    ${months.map(m=>`
+      <div class="bar-col">
+        <div class="m-val">${m.total>0?fmt(m.total):''}</div>
+        <div class="bar" style="height:${(m.total/max)*100}%;"></div>
+        <div class="m-label">${m.label}</div>
+      </div>`).join('')}
+  </div>
+  <div style="height:14px"></div>
+  ${tableWrap(['Mes','Interés de préstamos','Rendimiento de bancos','Total'], months.map(m=>`<tr><td>${monthLabel(m.key)}</td><td class="mono">${fmt(m.interest)}</td><td class="mono">${fmt(m.yieldAmt)}</td><td class="mono"><strong>${fmt(m.total)}</strong></td></tr>`).join(''))}
+  `;
+}
+
+function bindPanelEvents(){
+  document.querySelectorAll('[data-pay-loan]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      registerPayment(Number(btn.dataset.payLoan), Number(btn.dataset.payN));
+    });
+  });
+  document.querySelectorAll('[data-toggle-loan]').forEach(node=>{
+    node.addEventListener('click', ()=>{
+      const id = Number(node.dataset.toggleLoan);
+      openLoanId = openLoanId===id ? null : id;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-edit-loan]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = Number(btn.dataset.editLoan);
+      editLoanId = editLoanId===id ? null : id;
+      openLoanId = id;
+      editFormError = '';
+      render();
+    });
+  });
+  document.querySelectorAll('[data-cancel-edit-loan]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ editLoanId = null; editFormError=''; render(); });
+  });
+  document.querySelectorAll('[data-save-edit-loan]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.saveEditLoan);
+      try{
+        editLoan(id, {
+          name: document.getElementById(`edit-name-${id}`).value.trim(),
+          address: document.getElementById(`edit-address-${id}`).value.trim(),
+          amount: Number(document.getElementById(`edit-amount-${id}`).value),
+          rate: Number(document.getElementById(`edit-rate-${id}`).value),
+          frequency: document.getElementById(`edit-frequency-${id}`).value,
+          numPayments: Number(document.getElementById(`edit-numPayments-${id}`).value),
+          type: document.getElementById(`edit-type-${id}`).value,
+          startDate: document.getElementById(`edit-startDate-${id}`).value || todayStr(),
+          bankId: Number(document.getElementById(`edit-bankId-${id}`).value),
+        });
+      }catch(err){ showToast('Error al guardar: ' + err.message); }
+    });
+  });
+  document.querySelectorAll('[data-delete-loan]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteLoan(Number(btn.dataset.deleteLoan)); });
+  });
+  const loanForm = document.getElementById('loanForm');
+  if(loanForm){
+    const submitLoan = (e)=>{
+      if(e) e.preventDefault();
+      try{
+        const fd = new FormData(loanForm);
+        createLoan({
+          name: (fd.get('name')||'').trim(),
+          address: (fd.get('address')||'').trim(),
+          amount: Number(fd.get('amount')),
+          rate: Number(fd.get('rate')),
+          frequency: fd.get('frequency'),
+          numPayments: Number(fd.get('numPayments')),
+          type: fd.get('type'),
+          startDate: fd.get('startDate') || todayStr(),
+          bankId: Number(fd.get('bankId')),
+        });
+      }catch(err){
+        showToast('Ocurrió un error al registrar: ' + err.message);
+      }
+    };
+    loanForm.addEventListener('submit', submitLoan);
+    const submitBtn = document.getElementById('submitLoanBtn');
+    if(submitBtn){ submitBtn.addEventListener('click', submitLoan); }
+  }
+  const addBankBtn = document.getElementById('addBankBtn');
+  if(addBankBtn){
+    addBankBtn.addEventListener('click', ()=>{
+      const name = document.getElementById('newBankName').value.trim();
+      const rate = Number(document.getElementById('newBankRate').value)||0;
+      const balance = Number(document.getElementById('newBankBalance').value)||0;
+      addBank(name, rate, balance);
+    });
+  }
+  document.querySelectorAll('[data-save-bank]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.saveBank);
+      const name = document.getElementById(`bankName-${id}`).value.trim();
+      const rate = Number(document.getElementById(`bankRate-${id}`).value)||0;
+      updateBank(id, name, rate);
+    });
+  });
+  document.querySelectorAll('[data-deposit-bank]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.depositBank);
+      const input = document.getElementById(`bankDep-${id}`);
+      depositToBank(id, Number(input.value));
+      input.value='';
+    });
+  });
+  document.querySelectorAll('[data-withdraw-bank]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.withdrawBank);
+      const input = document.getElementById(`bankWd-${id}`);
+      withdrawFromBank(id, Number(input.value));
+      input.value='';
+    });
+  });
+  document.querySelectorAll('[data-set-bank]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.setBank);
+      const input = document.getElementById(`bankSet-${id}`);
+      const val = Number(input.value);
+      if(input.value==='' || isNaN(val)){ showToast('Escribe el nuevo saldo total.'); return; }
+      setBankBalance(id, val);
+      input.value='';
+    });
+  });
+  const yearSelect = document.getElementById('yearSelect');
+  if(yearSelect){
+    yearSelect.addEventListener('change', ()=>{
+      viewReportes.selectedYear = Number(yearSelect.value);
+      render();
+    });
+  }
+  const pwSaveBtn = document.getElementById('pwSaveBtn');
+  if(pwSaveBtn){
+    pwSaveBtn.addEventListener('click', ()=>{
+      const a = document.getElementById('pwAdmin').value.trim();
+      const v = document.getElementById('pwVisitor').value.trim();
+      if(!a || !v){ showToast('Ambas contraseñas son obligatorias.'); return; }
+      if(a===v){ showToast('Las contraseñas deben ser diferentes.'); return; }
+      state.auth.adminPassword = a;
+      state.auth.visitorPassword = v;
+      saveState(); render();
+      showToast('Contraseñas actualizadas.');
+    });
+  }
+  const genSyncBtn = document.getElementById('genSyncBtn');
+  if(genSyncBtn){
+    genSyncBtn.addEventListener('click', ()=>{
+      const code = generateSyncCode();
+      const out = document.getElementById('syncCodeOutput');
+      if(out && code){ out.value = code; showToast('Código generado. Cópialo y compártelo.'); }
+    });
+  }
+  const copySyncBtn = document.getElementById('copySyncBtn');
+  if(copySyncBtn){
+    copySyncBtn.addEventListener('click', async ()=>{
+      const out = document.getElementById('syncCodeOutput');
+      if(!out.value){ showToast('Primero genera el código.'); return; }
+      try{
+        await navigator.clipboard.writeText(out.value);
+        showToast('Código copiado al portapapeles.');
+      }catch(e){
+        out.select();
+        showToast('Selecciona y copia el código manualmente.');
+      }
+    });
+  }
+  const loadSyncBtn = document.getElementById('loadSyncBtn');
+  if(loadSyncBtn){
+    loadSyncBtn.addEventListener('click', ()=>{
+      const input = document.getElementById('syncCodeInput');
+      loadSyncCode(input.value);
+    });
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>
