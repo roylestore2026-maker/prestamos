@@ -9,6 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Préstamos" />
 <meta name="theme-color" content="#1F4B3C" />
 <title>Libro de Préstamos</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
@@ -295,6 +297,9 @@ let editLoanId = null;
 let loanFormError = '';
 let editFormError = '';
 let currentRole = null; // 'admin' | 'visitor'
+let fbDb = null;
+let fbUnsub = null;
+let fbStatus = 'sin configurar'; // 'sin configurar' | 'conectando' | 'conectado' | 'error'
 
 let state = {
   loans: [],
@@ -304,6 +309,12 @@ let state = {
   auth: {
     adminPassword: 'admin123',
     visitorPassword: 'visita123',
+  },
+  firebase: {
+    apiKey: '',
+    projectId: '',
+    appId: '',
+    roomCode: '',
   },
 };
 
@@ -427,6 +438,93 @@ function accrueAllBanks(){
   state.pool.banks.forEach(b=> accrueBank(b, today));
 }
 
+/* ---------------- Storage: Firebase (real-time, cross-device) > Claude shared storage > local fallback ---------------- */
+function firebaseConfigured(){
+  const f = state.firebase;
+  return !!(f && f.apiKey && f.projectId && f.appId && f.roomCode);
+}
+function firebaseDocRef(){
+  return fbDb.collection('prestamos-app-rooms').doc(state.firebase.roomCode.trim());
+}
+function initFirebaseApp(){
+  if(!firebaseConfigured()) return false;
+  if(fbDb) return true;
+  try{
+    const f = state.firebase;
+    const cfg = {
+      apiKey: f.apiKey,
+      authDomain: f.projectId + '.firebaseapp.com',
+      projectId: f.projectId,
+      storageBucket: f.projectId + '.appspot.com',
+      appId: f.appId,
+    };
+    if(typeof firebase === 'undefined'){ fbStatus = 'error'; showToast('No se pudo cargar Firebase (revisa tu conexión).'); return false; }
+    if(!firebase.apps || !firebase.apps.length){ firebase.initializeApp(cfg); }
+    fbDb = firebase.firestore();
+    return true;
+  }catch(e){ fbStatus = 'error'; console.error('Firebase init error', e); showToast('No se pudo conectar a Firebase. Revisa la configuración.'); return false; }
+}
+function subscribeFirebase(){
+  if(fbUnsub){ fbUnsub(); fbUnsub = null; }
+  fbUnsub = firebaseDocRef().onSnapshot((snap)=>{
+    fbStatus = 'conectado';
+    if(snap.exists){
+      const data = snap.data();
+      if(data && data.json){
+        try{
+          const parsed = JSON.parse(data.json);
+          state = parsed;
+          try{ localStorage.setItem(STORAGE_KEY, data.json); }catch(e){}
+          accrueAllBanks();
+          render();
+        }catch(e){ /* ignore malformed remote data */ }
+      }
+    }
+  }, (err)=>{
+    fbStatus = 'error';
+    console.error('Firebase sync error', err);
+    showToast('Error de sincronización con Firebase. Revisa las reglas del proyecto.');
+    render();
+  });
+}
+async function pushToFirebase(){
+  if(!firebaseConfigured()) return;
+  if(!initFirebaseApp()) return;
+  try{ await firebaseDocRef().set({ json: JSON.stringify(state), updatedAt: Date.now() }); }
+  catch(e){ console.error('Firebase push error', e); showToast('No se pudo guardar en Firebase. Revisa la configuración/reglas.'); }
+}
+// Used only when the admin presses "Guardar y conectar": checks whether the room
+// already has data BEFORE pushing or pulling anything, so nothing gets overwritten silently.
+async function connectFirebaseAndReconcile(){
+  if(!initFirebaseApp()){ render(); return; }
+  fbStatus = 'conectando'; render();
+  try{
+    const snap = await firebaseDocRef().get();
+    if(snap.exists && snap.data() && snap.data().json){
+      const useRemote = confirm(
+        'Ya hay datos guardados en Firebase con este código de sala.\n\n' +
+        'Aceptar = usar esos datos (reemplaza lo que hay en ESTE dispositivo).\n' +
+        'Cancelar = mantener los datos de este dispositivo y subirlos (reemplaza lo que había en Firebase).'
+      );
+      if(useRemote){
+        state = JSON.parse(snap.data().json);
+        ensureDefaults();
+        accrueAllBanks();
+      }
+    }
+    await saveState();
+    subscribeFirebase();
+    fbStatus = 'conectado';
+    render();
+    showToast('Conectado a Firebase.');
+  }catch(e){
+    fbStatus = 'error';
+    console.error('Firebase connect error', e);
+    showToast('No se pudo conectar. Revisa los datos y las reglas de Firebase.');
+    render();
+  }
+}
+
 /* ---------------- Storage: shared (Claude artifact link) with local fallback (standalone phone use) ---------------- */
 async function storageGetRaw(){
   if(window.storage){
@@ -458,6 +556,9 @@ async function loadState(){
   }catch(e){ /* first run or storage blocked */ }
   ensureDefaults();
   accrueAllBanks();
+  if(firebaseConfigured()){
+    if(initFirebaseApp()){ subscribeFirebase(); }
+  }
   await saveState();
   initAuth();
 }
@@ -466,6 +567,7 @@ function ensureDefaults(){
   if(!state.pool.banks) state.pool.banks = [];
   if(!state.pool.movements) state.pool.movements = [];
   if(!state.loans) state.loans = [];
+  if(!state.firebase) state.firebase = {apiKey:'', projectId:'', appId:'', roomCode:''};
   if(!state.nextBankId) state.nextBankId = (state.pool.banks.length ? Math.max(...state.pool.banks.map(b=>b.id))+1 : 1);
   if(!state.nextLoanId) state.nextLoanId = (state.loans.length ? Math.max(...state.loans.map(l=>l.id))+1 : 1);
   if(!state.auth) state.auth = {adminPassword:'admin123', visitorPassword:'visita123'};
@@ -490,8 +592,12 @@ function migrateLegacy(old){
   };
 }
 async function saveState(){
-  try{ await storageSetRaw(JSON.stringify(state)); }
-  catch(e){ showToast('No se pudo guardar.'); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  if(firebaseConfigured()){
+    await pushToFirebase();
+  } else if(window.storage){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), true); }catch(e){}
+  }
 }
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -1051,8 +1157,40 @@ function viewBolsa(){
   </div>
   <div style="margin-top:10px;"><button class="btn secondary" id="pwSaveBtn">Guardar contraseñas</button></div>
   <div style="height:20px"></div>
-  <h3 class="subsection-title">Sincronizar entre dispositivos</h3>
-  <p class="section-sub">Genera un código con todos tus datos actuales y pégalo en la app abierta en otro celular (o envíaselo a otra persona por WhatsApp/correo para que lo pegue). Esto reemplaza todos los datos del dispositivo donde se pega.</p>
+  <h3 class="subsection-title">Sincronización en tiempo real (Firebase, opcional)</h3>
+  <p class="section-sub">
+    Con esto, todos los celulares que configures con los mismos 4 datos ven y actualizan la misma información automáticamente, sin códigos manuales. Requiere una cuenta gratuita de Google.
+  </p>
+  <ol style="font-size:12.5px; color:var(--ink-soft); line-height:1.7; padding-left:20px; margin-top:-6px;">
+    <li>Ve a <strong>console.firebase.google.com</strong>, inicia sesión y crea un proyecto nuevo (gratis).</li>
+    <li>En el menú lateral, entra a <strong>"Firestore Database"</strong> → "Crear base de datos" → modo de producción → cualquier región.</li>
+    <li>En la pestaña <strong>"Reglas"</strong> de Firestore, reemplaza el contenido por esto y publica:
+      <div class="tbl-scroll"><pre style="background:var(--paper-deep); padding:10px; border-radius:6px; font-size:11px; margin-top:6px;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /prestamos-app-rooms/{roomCode} {
+      allow read, write: if true;
+    }
+  }
+}</pre></div>
+    </li>
+    <li>Ve a los <strong>ajustes del proyecto</strong> (ícono de engranaje) → "Tus apps" → crea una app web (ícono &lt;/&gt;) → copia el <strong>apiKey</strong>, <strong>projectId</strong> y <strong>appId</strong> que te muestre.</li>
+    <li>Inventa un <strong>"código de sala"</strong> (una palabra única, ej. tu nombre + un número) y úsalo igual en todos los dispositivos.</li>
+  </ol>
+  <div class="info-note">Importante: estas reglas dejan la base de datos abierta a quien tenga esos mismos datos de configuración (no hay una segunda capa de seguridad de Google, solo la de administrador/visitante de esta app). No guardes ahí información más sensible que la de este cuaderno de préstamos, y elige un código de sala difícil de adivinar.</div>
+  <div class="form-grid">
+    <div><label>API Key</label><input type="text" id="fbApiKey" value="${state.firebase.apiKey}" /></div>
+    <div><label>Project ID</label><input type="text" id="fbProjectId" value="${state.firebase.projectId}" /></div>
+    <div><label>App ID</label><input type="text" id="fbAppId" value="${state.firebase.appId}" /></div>
+    <div><label>Código de sala</label><input type="text" id="fbRoomCode" value="${state.firebase.roomCode}" placeholder="ej. donorca2026" /></div>
+  </div>
+  <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+    <button class="btn" id="fbSaveBtn">Guardar y conectar</button>
+    <span class="section-sub" style="margin:0;">Estado: <strong>${firebaseConfigured() ? fbStatus : 'sin configurar'}</strong></span>
+  </div>
+  <div style="height:20px"></div>
+  <h3 class="subsection-title">Sincronizar entre dispositivos (código manual)</h3>
+  <p class="section-sub">Si no quieres usar Firebase, puedes generar un código con todos tus datos actuales y pegarlo en la app abierta en otro celular (o enviárselo a otra persona por WhatsApp/correo para que lo pegue). Esto reemplaza todos los datos del dispositivo donde se pega, y no se actualiza solo después.</p>
   <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
     <button class="btn secondary" id="genSyncBtn">Generar código</button>
     <button class="btn secondary" id="copySyncBtn">Copiar código</button>
@@ -1250,6 +1388,19 @@ function bindPanelEvents(){
       state.auth.visitorPassword = v;
       saveState(); render();
       showToast('Contraseñas actualizadas.');
+    });
+  }
+  const fbSaveBtn = document.getElementById('fbSaveBtn');
+  if(fbSaveBtn){
+    fbSaveBtn.addEventListener('click', ()=>{
+      const apiKey = document.getElementById('fbApiKey').value.trim();
+      const projectId = document.getElementById('fbProjectId').value.trim();
+      const appId = document.getElementById('fbAppId').value.trim();
+      const roomCode = document.getElementById('fbRoomCode').value.trim();
+      if(!apiKey || !projectId || !appId || !roomCode){ showToast('Completa los 4 campos de Firebase.'); return; }
+      state.firebase = { apiKey, projectId, appId, roomCode };
+      fbDb = null;
+      connectFirebaseAndReconcile();
     });
   }
   const genSyncBtn = document.getElementById('genSyncBtn');
